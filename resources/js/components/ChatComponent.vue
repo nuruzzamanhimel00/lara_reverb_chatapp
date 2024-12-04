@@ -15,8 +15,9 @@
                                     <div class="panel-body">
                                         <div class="chats" style="
                                         height: 400px;
-                                        overflow-y: scroll;
-                                    ">
+                                        overflow-y: scroll;"
+                                            ref="messagesContainer"
+                                        >
                                             <div class="chat"
                                             v-for="message in messages"
                                             :key="message.id"
@@ -45,6 +46,8 @@
                                         <form>
                                             <div class="input-group">
                                                 <input
+                                                    @keydown="sendTypingEvent"
+                                                    @keyup.enter="sendMessage"
                                                     type="text"
                                                     class="form-control"
                                                     placeholder="Say something"
@@ -61,6 +64,9 @@
                                                 </span>
                                             </div>
                                         </form>
+                                        <small v-if="isFriendTyping" class="text-gray-700">
+                                            {{ friend.name }} is typing...
+                                        </small>
                                     </div>
                                 </div>
                                 <!-- End Panel Chat -->
@@ -81,16 +87,58 @@ export default {
         return {
             messages: [],
             newMessage:'',
+            isFriendTyping:false,
+            isFriendTypingTimer:null
         };
+    },
+    watch: {
+        messages: {
+            handler() {
+                this.$nextTick(() => {
+                    this.scrollToBottom();
+                });
+            },
+            deep: true,
+        },
     },
     mounted() {
         axios.get(`/messages/${this.friend.id}`).then((response) => {
             console.log(response.data);
             this.messages = response.data;
         });
+        Echo.private(`chat.${this.currentUser.id}`)
+        .listen("MessageSent", (response) => {
+            this.messages.push(response.message);
+
+        })
+        .listenForWhisper("typing", (response) => {
+            this.isFriendTyping = response.userID === this.friend.id;
+
+            if (this.isFriendTypingTimer) {
+                clearTimeout(this.isFriendTypingTimer);
+            }
+
+            this.isFriendTypingTimer = setTimeout(() => {
+                this.isFriendTyping = false;
+            }, 1000);
+        });
         // console.log("Component mounted.");
     },
     methods:{
+        sendTypingEvent(){
+            Echo.private(`chat.${this.friend.id}`).whisper("typing", {
+                userID: this.currentUser.id,
+            });
+        },
+        scrollToBottom() {
+            const messagesContainer = this.$refs.messagesContainer;
+            if (messagesContainer) {
+                messagesContainer.scrollTo({
+                    top: messagesContainer.scrollHeight,
+                    behavior: "smooth",
+                });
+            }
+        },
         sendMessage(){
             if(this.newMessage.length > 0){
                 axios

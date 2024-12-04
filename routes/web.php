@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Events\MessageSent;
 use App\Models\ChatMessage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -44,7 +45,7 @@ Route::post('/messages/{friend}', function (User $friend) {
         'text' => request()->input('message')
     ]);
 
-    // broadcast(new MessageSent($message));
+    broadcast(new MessageSent($message));
 
     return  $message;
 });
