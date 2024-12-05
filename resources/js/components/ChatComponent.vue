@@ -2,9 +2,12 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8">
-                <h2 class="p-2">
-                    friend name: <b>{{ friend.name }}</b>
-                </h2>
+
+                <h1 class="text-lg font-semibold mr-2">    friend name:{{ friend.name }}
+
+                    (<span v-if="isUserOnline " >Online</span>)
+                </h1>
+                <!-- <span :class="isUserOnline ? 'bg-green-500' : 'bg-gray-400'" class="inline-block h-2 w-2 rounded-full"></span> -->
                 <div class="card">
                     <div class="card-body">
                         <div class="container bootstrap snippets bootdeys">
@@ -88,7 +91,8 @@ export default {
             messages: [],
             newMessage:'',
             isFriendTyping:false,
-            isFriendTypingTimer:null
+            isFriendTypingTimer:null,
+            isUserOnline: false,
         };
     },
     watch: {
@@ -103,7 +107,7 @@ export default {
     },
     mounted() {
         axios.get(`/messages/${this.friend.id}`).then((response) => {
-            console.log(response.data);
+            // console.log(response.data);
             this.messages = response.data;
         });
         Echo.private(`chat.${this.currentUser.id}`)
@@ -121,6 +125,19 @@ export default {
             this.isFriendTypingTimer = setTimeout(() => {
                 this.isFriendTyping = false;
             }, 1000);
+        });
+
+        //online
+        Echo.join(`presence.chat`)
+            .here(users => {
+                console.log('users',users)
+                this.isUserOnline = users.some(user => user.id === this.friend.id);
+            })
+            .joining(user => {
+                if (user.id === this.friend.id) isUserOnline.value = true;
+            })
+            .leaving(user => {
+                if (user.id === this.friend.id) isUserOnline.value = false;
         });
         // console.log("Component mounted.");
     },
