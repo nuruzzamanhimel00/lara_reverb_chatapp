@@ -110,6 +110,7 @@ export default {
             // console.log(response.data);
             this.messages = response.data;
         });
+        
         Echo.private(`chat.${this.currentUser.id}`)
         .listen("MessageSent", (response) => {
             this.messages.push(response.message);
