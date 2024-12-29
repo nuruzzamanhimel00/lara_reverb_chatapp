@@ -110,7 +110,7 @@ export default {
             // console.log(response.data);
             this.messages = response.data;
         });
-        
+
         Echo.private(`chat.${this.currentUser.id}`)
         .listen("MessageSent", (response) => {
             this.messages.push(response.message);
@@ -118,6 +118,7 @@ export default {
         })
         .listenForWhisper("typing", (response) => {
             this.isFriendTyping = response.userID === this.friend.id;
+            console.log('response',response)
 
             if (this.isFriendTypingTimer) {
                 clearTimeout(this.isFriendTypingTimer);
@@ -135,10 +136,10 @@ export default {
                 this.isUserOnline = users.some(user => user.id === this.friend.id);
             })
             .joining(user => {
-                if (user.id === this.friend.id) isUserOnline.value = true;
+                if (user.id === this.friend.id) this.isUserOnline = true;
             })
             .leaving(user => {
-                if (user.id === this.friend.id) isUserOnline.value = false;
+                if (user.id === this.friend.id) this.isUserOnline = false;
         });
         // console.log("Component mounted.");
     },
